@@ -12,6 +12,10 @@ import java.util.regex.{Matcher, Pattern}
 import java.util.StringTokenizer
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
+/**
+ * Solution to Part 3 of home work where we have to calculate the total number of logs for each type of message
+ */
+
 class Log1 {
 }
 object Log1 {
@@ -21,7 +25,6 @@ object Log1 {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, IntWritable]#Context): Unit = {
       val word = new Text()
       val pattern = Pattern.compile("(INFO|WARN|DEBUG|ERROR) .* - (.*)")
-      try{
       val matcher = pattern.matcher(value.toString)
       if(matcher.find()){
         val key = matcher.group(1)
@@ -30,12 +33,7 @@ object Log1 {
         context.write(word, one)
         
       }
-      }
-      catch{
-        case x: Exception =>{
-          print("Caught exception ")
-        }
-      }
+      
     }
   }
   class IntSumReducer extends Reducer[Text,IntWritable,Text,IntWritable] {
