@@ -6,7 +6,7 @@ import java.util.StringTokenizer
 
 class test {}
 
-object test extends App {
+object test  {
   val GLOBAL_PATTERN = Pattern.compile("([a-c][e-g][0-3]|[A-Z][5-9][f-w]){5,15}")
 //  val pattern1 = Pattern.compile("(.*) [.*] ([INFO|WARN|DEBUG|ERROR]) .* - (.*)")
   val pattern1 = Pattern.compile("(.*)\\s*\\[.*\\]\\s*(INFO|WARN|DEBUG|ERROR)\\s*\\-\\s*(.*)")

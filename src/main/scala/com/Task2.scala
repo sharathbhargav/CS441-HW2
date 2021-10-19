@@ -6,6 +6,8 @@ import org.apache.hadoop.io.{IntWritable, LongWritable, Text, WritableComparable
 import org.apache.hadoop.mapreduce.{Job, Mapper, Reducer}
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
+import com.Helpers.{CreateLogger, UtilityFunc}
+import com.typesafe.config.ConfigFactory
 
 import java.lang
 import java.text.SimpleDateFormat
@@ -18,24 +20,24 @@ class Task2 {
 }
 
 object Task2 {
+  val config = ConfigFactory.load()
+  val logger = CreateLogger(classOf[Task2])
+  val one = new IntWritable(1)
 
   class Map1 extends Mapper[Object, Text, IntWritable, IntWritable] {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, IntWritable, IntWritable]#Context): Unit = {
-      val pattern = Pattern.compile("(.*)\\s*\\[.*\\]\\s*(ERROR)\\s*\\-\\s*(.*)")
+      val pattern = Pattern.compile(config.getString("mr.log_pattern"))
       val matcher = pattern.matcher(value.toString)
       val interval = context.getConfiguration.get("interval").toInt
       if (matcher.find()) {
-        val GLOBAL_PATTERN = Pattern.compile("([a-c][e-g][0-3]|[A-Z][5-9][f-w]){5,15}")
+        val GLOBAL_PATTERN = Pattern.compile(config.getString("mr.detect_pattern"))
         val dateFormatter = new SimpleDateFormat("HH:mm:ss.SSS")
         val date = (dateFormatter.parse(matcher.group(1).toString).getTime) / (1000)
         val d1 = (date.toInt) / interval
-
-        val key = matcher.group(2)
         val msg = matcher.group(3)
         val global_matcher = GLOBAL_PATTERN.matcher(msg.toString)
-        val nM = d1
         if (global_matcher.find())
-          context.write(new IntWritable(nM), new IntWritable(1))
+          context.write(new IntWritable(d1), one)
       }
     }
   }
@@ -70,7 +72,6 @@ object Task2 {
 
       values.forEach(each => {
         val strDate = UtilityFunc.convertTimeStampToString(each.toString, context.getConfiguration.get("interval").toInt)
-
         context.write(new Text(key.get().toString), new Text(strDate))
       })
     }
@@ -91,13 +92,14 @@ object Task2 {
     FileOutputFormat.setOutputPath(job, new Path(args(1)))
     if (job.waitForCompletion(true)) {
       val job1 = Job.getInstance(conf, "Job2")
-      job1.setJarByClass(classOf[Task1])
-
+      job1.setJarByClass(classOf[Task2])
+      conf.set("mapred.textoutputformat.separator", ",")
       job1.setMapperClass(classOf[Map2])
       job1.setMapOutputKeyClass(classOf[IntWritable])
       job1.setMapOutputValueClass(classOf[Text])
       job1.setSortComparatorClass(classOf[DescendingIntComparator])
       job1.setReducerClass(classOf[Reduce2])
+      job1.setNumReduceTasks(1)
       job1.setOutputKeyClass(classOf[Text])
       job1.setOutputValueClass(classOf[Text])
       FileInputFormat.addInputPath(job1, new Path(args(1)))

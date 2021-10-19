@@ -1,74 +1,57 @@
 package com
 
+import com.Helpers.CreateLogger
+
+import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{IntWritable, Text}
 import org.apache.hadoop.mapreduce.{Job, Mapper, Reducer}
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
-
 import java.lang
-import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
 class Task4 {
-
 }
 
-
 object Task4 {
-  class TokenMapper extends Mapper[Object, Text, Text, Text] {
+  val config = ConfigFactory.load()
+  val logger = CreateLogger(classOf[Task4])
+  class TokenMapper1 extends Mapper[Object, Text, Text, Text] {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, Text]#Context): Unit = {
-      val pattern = Pattern.compile("(.*)\\s*\\[.*\\]\\s*(INFO|WARN|DEBUG|ERROR)\\s*\\-\\s*(.*)")
-
-      val GLOBAL_PATTERN = Pattern.compile("([a-c][e-g][0-3]|[A-Z][5-9][f-w]){5,15}")
-
+      val pattern = Pattern.compile(config.getString("mr.log_pattern"))
+      val GLOBAL_PATTERN = Pattern.compile(config.getString("mr.detect_pattern"))
       val matcher = pattern.matcher(value.toString)
       if (matcher.find()) {
         val key = matcher.group(2)
         val msg = matcher.group(3)
         val global_matcher = GLOBAL_PATTERN.matcher(msg.toString)
         if (global_matcher.find()) {
-          val matched = global_matcher.group(0).toString
-          val matchedLen = matched.length
+          val matched = global_matcher.group(0)
           context.write(new Text(key), new Text(matched))
-
         }
-
       }
     }
   }
 
-  class LogReducer extends Reducer[Text, Text, Text, Text] {
+  class LogReducer1 extends Reducer[Text, Text, Text, Text] {
     override def reduce(key: Text, values: lang.Iterable[Text], context: Reducer[Text, Text, Text, Text]#Context): Unit = {
-      val s = values.asScala.foldLeft("")(_ + "\n "+_.toString)
-
-      val iter = values.iterator()
-      var m=0
-      var ms=""
-      while(iter.hasNext){
-        val m1= iter.next()
-        if(m1.toString.length>m){
-          m=m1.toString.length
-          ms=m1.toString
-          context.write(new Text(key.toString), new Text(ms+","+m.toString))
-
-        }
-      }
-      context.write(new Text(key.toString), new Text(ms+","+m.toString+" "+s))
-
+      val k = values.asScala.max
+      context.write(new Text(key.toString), new Text(k.getLength.toString))
     }
   }
 
   def main(args: Array[String]): Unit = {
     val conf = new Configuration()
     val job = Job.getInstance(conf)
+    conf.set("mapred.textoutputformat.separator", ",")
     job.setJarByClass(classOf[Task4])
-    job.setMapperClass(classOf[TokenMapper])
+    job.setMapperClass(classOf[TokenMapper1])
     job.setMapOutputKeyClass(classOf[Text])
     job.setMapOutputValueClass(classOf[Text])
-    job.setReducerClass(classOf[LogReducer])
+    job.setReducerClass(classOf[LogReducer1])
     job.setOutputKeyClass(classOf[Text])
     job.setOutputValueClass(classOf[Text])
     FileInputFormat.addInputPath(job, new Path(args(0)))

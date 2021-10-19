@@ -1,5 +1,7 @@
 package com
 
+import com.Helpers.{CreateLogger, UtilityFunc}
+import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{IntWritable, Text}
@@ -15,39 +17,46 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 class Task1 {
 
 }
+
 object Task1 {
-  class TokenMapper extends Mapper[Object,Text,Text,IntWritable ]{
+  val config = ConfigFactory.load()
+  val logger = CreateLogger(classOf[Task1])
+  val one = new IntWritable(1)
+  class TokenMapper extends Mapper[Object, Text, Text, IntWritable] {
     override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, IntWritable]#Context): Unit = {
-      val pattern = Pattern.compile("(.*)\\s*\\[.*\\]\\s*(INFO|WARN|DEBUG|ERROR)\\s*\\-\\s*(.*)")
+      val pattern = Pattern.compile(config.getString("mr.log_pattern"))
       val matcher = pattern.matcher(value.toString)
       val interval = context.getConfiguration.get("interval").toInt
-      if(matcher.find()){
-        val GLOBAL_PATTERN = Pattern.compile("([a-c][e-g][0-3]|[A-Z][5-9][f-w]){5,15}")
+      if (matcher.find()) {
+        val GLOBAL_PATTERN = Pattern.compile(config.getString("mr.detect_pattern"))
         val dateFormatter = new SimpleDateFormat("HH:mm:ss.SSS")
-        val date = (dateFormatter.parse(matcher.group(1).toString).getTime)/(1000)
-        val d1 = (date.toInt)/interval
+        val date = (dateFormatter.parse(matcher.group(1)).getTime) / (1000)
+        val d1 = (date.toInt) / interval
         val key = matcher.group(2)
         val msg = matcher.group(3)
-        val global_matcher = GLOBAL_PATTERN.matcher(msg.toString)
-        val nM = key +","+ d1.toString
-        if(global_matcher.find())
-          context.write(new Text(nM),new IntWritable(1))
+        val global_matcher = GLOBAL_PATTERN.matcher(msg)
+        val nM = key + "," + d1.toString
+        if (global_matcher.find())
+          context.write(new Text(nM),one)
       }
     }
   }
-  class LogReducer extends Reducer[Text,IntWritable,Text,IntWritable]{
+
+  class LogReducer extends Reducer[Text, IntWritable, Text, IntWritable] {
     override def reduce(key: Text, values: lang.Iterable[IntWritable], context: Reducer[Text, IntWritable, Text, IntWritable]#Context): Unit = {
-      val s = values.asScala.foldLeft(0)(_+_.get())
+      val s = values.asScala.foldLeft(0)(_ + _.get())
       val str = key.toString.split(",")
-      val strDate = UtilityFunc.convertTimeStampToString(str(1).toString,context.getConfiguration.get("interval").toInt)
-      context.write(new Text(strDate+ " "+str(0)),new IntWritable(s))
+      val strDate = UtilityFunc.convertTimeStampToString(str(1).toString, context.getConfiguration.get("interval").toInt)
+      context.write(new Text(strDate + "," + str(0)), new IntWritable(s))
 
     }
   }
 
-  def main(args:Array[String]):Unit = {
-    val conf=new Configuration()
-    conf.set("interval",args(2))
+
+  def main(args: Array[String]): Unit = {
+    val conf = new Configuration()
+    conf.set("interval", args(2))
+    conf.set("mapred.textoutputformat.separator", ",")
     val job = Job.getInstance(conf)
     job.setJarByClass(classOf[Task1])
     job.setMapperClass(classOf[TokenMapper])
@@ -56,8 +65,9 @@ object Task1 {
     job.setReducerClass(classOf[LogReducer])
     job.setOutputKeyClass(classOf[Text])
     job.setOutputValueClass(classOf[IntWritable])
-    FileInputFormat.addInputPath(job,new Path(args(0)))
-    FileOutputFormat.setOutputPath(job,new Path(args(1)))
-    System.exit(if(job.waitForCompletion(true)) 0 else 1)
+    FileInputFormat.addInputPath(job, new Path(args(0)))
+    FileOutputFormat.setOutputPath(job, new Path(args(1)))
+    System.exit(if (job.waitForCompletion(true)) 0 else 1)
   }
+
 }
