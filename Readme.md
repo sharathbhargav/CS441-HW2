@@ -44,12 +44,14 @@ In the programs written in  this repo, the map phase will take each line of log 
 
 This is the general overview of a map-reduce program. There are various other steps that can be overridden by programmer such as defining a comparator which is run before reduce phase. An example of this can be found in Task2. The comparator is used to sort the list before passing to reduce phase. By overriding this function the programmer can control how elements are compared for sorting.
 
-#Description of input:
+# Description of input:
 
 The input was 11 log files. 10 of which were 1MB each i.e. while generating the log files a rolling window of 1MB was used to create new log files after each file reaches capacity. One more log file of about 45MB was among the input as well. This would create 11 mappers for all tasks. And by default would create 3 reducers, except in task2 where it is explicitly mentioned that only 1 reducer has to be generated so that all output resides in one file.
 
-#Description of each task:
-##Task1
+# Description of each task:
+
+## Task1
+
 Takes in log files as input. The mapper phase maps the log message type of logs that match the predefined pattern. The timestamp of the message is extracted and binned into an interval set by user in the command line argument. It outputs the message type (INFO, DEBUG, ERROR, WARN) and the binned interval time as key and "1" as value.
 The reducer phase aggregates this and outputs number of messages of a particular message type in a given interval. 
 
@@ -58,7 +60,8 @@ An example of output is : 16:42:00,DEBUG,61
 Here 16:42:00 is the time bin of 60 seconds i.e from 16:42:00 to 16:42:59 there were 61 messages of type DEBUG in the log files.
 
 
-##Task2
+## Task2
+
 Takes in log files as input. The mapper phase maps the time interval bin to number of ERROR messages that match the pattern. The reducer then aggregates these values. 
 There is a second map-reduce job in this task which is used explicitly for sorting values. The mapper in this job just inverses the key value such that number of messages is the key and time interval bin is the value. The comparator before reduce phase is overridden to sort the values in descending order. The reduce phase then just outputs this result.  
 
@@ -67,7 +70,8 @@ Example output: 675,15:45:00
 Here 675 messages of type ERROR where found in the time interval 15:45:00 to 15:45:59 and this was the highest number of ERROR messages in any of the interval bins.
 
 
-##Task3 
+## Task3 
+
 Takes in log files as input. The mapper phase maps the log message type to number one. The reduce phase aggregates this to obtain the number of messages of each log message type.
 Output:
 DEBUG,59093 
@@ -78,7 +82,8 @@ WARN,68786
 
 ERROR,49549
 
-##Task4
+## Task4
+
 Takes in log files as input. The mapper phase maps the message string that match the predefined pattern to the message type. The reducer finds the length of the longest string for each type and outputs that as result.
 
 Output:
@@ -90,5 +95,5 @@ WARN,15
 
 ERROR,24
 
-#Deploying to AWS
+# Deploying to AWS
 Generate the jar file using "sbt assembly" and then use this as input for a step in AWS EMR as shown in the video. The inputs can either be on S3 or can be copied into master node of the cluster. Give respective input paths while running the program.
