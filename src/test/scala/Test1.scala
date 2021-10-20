@@ -24,7 +24,7 @@ class Test1 extends AnyFlatSpec with Matchers{
     val matcher = pattern.matcher(example_msg)
     matcher.find()
     val time = matcher.group(1)
-    assert(time.equals("12:47:01.530"))
+    assert(time.equals("12:47:01.530 "))
   }
 
   it should "Match the log pattern defined in the conf file and extract the right pattern for message type" in {

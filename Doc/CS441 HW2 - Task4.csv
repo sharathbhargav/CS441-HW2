@@ -1,0 +1,5 @@
+Message type,Number of characters in longest message matching the pattern
+DEBUG,18
+INFO,15
+WARN,15
+ERROR,24
