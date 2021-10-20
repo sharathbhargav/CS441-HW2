@@ -14,6 +14,13 @@ import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
+/**
+ * This map reduce job takes in log files in a folder as input and outputs the number of messages of each log type
+ * (INFO, DEBUG, WARN, ERROR) divided across time intervals of n seconds where n is passed as a parameter while
+ * running the program.
+ *
+ */
+
 class Task1 {
 
 }
@@ -30,12 +37,12 @@ object Task1 {
       if (matcher.find()) {
         val GLOBAL_PATTERN = Pattern.compile(config.getString("mr.detect_pattern"))
         val dateFormatter = new SimpleDateFormat("HH:mm:ss.SSS")
-        val date = (dateFormatter.parse(matcher.group(1)).getTime) / (1000)
-        val d1 = (date.toInt) / interval
+        val date = (dateFormatter.parse(matcher.group(1)).getTime) / (1000) //Divide the epoch time by 1000 to convert from milli seconds to seconds
+        val d1 = (date.toInt) / interval // Divide th
         val key = matcher.group(2)
         val msg = matcher.group(3)
         val global_matcher = GLOBAL_PATTERN.matcher(msg)
-        val nM = key + "," + d1.toString
+        val nM = key + "," + d1.toString // Passing a pseudo composite key to represent the tuple of time interval and msg type
         if (global_matcher.find())
           context.write(new Text(nM),one)
       }
@@ -67,6 +74,7 @@ object Task1 {
     job.setOutputValueClass(classOf[IntWritable])
     FileInputFormat.addInputPath(job, new Path(args(0)))
     FileOutputFormat.setOutputPath(job, new Path(args(1)))
+    logger.info("Starting map reduce task 1")
     System.exit(if (job.waitForCompletion(true)) 0 else 1)
   }
 

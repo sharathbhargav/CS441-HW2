@@ -16,6 +16,9 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 class Task4 {
 }
 
+/**
+ * This task involves counting the number of characters in the longest message of each log type which matches the pattern given.
+ */
 object Task4 {
   val config = ConfigFactory.load()
   val logger = CreateLogger(classOf[Task4])
@@ -56,6 +59,7 @@ object Task4 {
     job.setOutputValueClass(classOf[Text])
     FileInputFormat.addInputPath(job, new Path(args(0)))
     FileOutputFormat.setOutputPath(job, new Path(args(1)))
+    logger.info("Starting job")
     System.exit(if (job.waitForCompletion(true)) 0 else 1)
   }
 }

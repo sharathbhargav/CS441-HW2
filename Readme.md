@@ -10,7 +10,7 @@ This repo contains 4 different map-reduce programs that perform various operatio
 ## Installation instructions
 This section contains the instructions on how to run the different Map-Reduce implemented as part of this homework.
 
-1. Use following URL to clone the project : https://github.com/sharathbhargav/CS441-HW2.git
+1. Use following URL to clone the project : git@github.com:sharathbhargav/CS441-HW2.git
 2. Navigate into project root directory and run "sbt assembly". This will generate a JAR file in target/scala-2.13/
 3. There are 4 classes, one each for 4 tasks: com.Task1, com.Task2, com.Task3, com.Task4.
 4. The time period to split the log files is passed as parameter when required. This allows for customization while running the program.
@@ -31,3 +31,6 @@ where path/to/input is a folder containing all log files,  path/to/output is fol
 
 For task4 : "hadoop jar LogFileProcessor-assembly-1.0.jar com.Task4 /path/to/input /path/to/output"
 where path/to/input is a folder containing all log files,  path/to/output is folder name where output has to be written
+
+
+A short demo of running the above tasks on AWS EMR can be found at https://www.youtube.com/watch?v=ANBrpZWj3qc

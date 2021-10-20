@@ -18,7 +18,15 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 class Task2 {
 
 }
-
+/**
+ * This map reduce job takes in log files in a folder as input and outputs the number of error messages
+ * divided across time intervals of n seconds where n is passed as a parameter while
+ * running the program. The output is sorted in descending order of number of messages.
+ * This task involves 2 map reduce jobs. The first job detects that count of error messages that match the pattern.
+ * The second task sorts the output in descending order by using a custom comparator function that is called before
+ * reduce stage.
+ *
+ */
 object Task2 {
   val config = ConfigFactory.load()
   val logger = CreateLogger(classOf[Task2])
@@ -32,7 +40,7 @@ object Task2 {
       if (matcher.find()) {
         val GLOBAL_PATTERN = Pattern.compile(config.getString("mr.detect_pattern"))
         val dateFormatter = new SimpleDateFormat("HH:mm:ss.SSS")
-        val date = (dateFormatter.parse(matcher.group(1).toString).getTime) / (1000)
+        val date = (dateFormatter.parse(matcher.group(1).toString).getTime) / (1000) //Divide the epoch time by 1000 to convert from milli seconds to seconds
         val d1 = (date.toInt) / interval
         val msg = matcher.group(3)
         val global_matcher = GLOBAL_PATTERN.matcher(msg.toString)
@@ -58,6 +66,9 @@ object Task2 {
     }
   }
 
+  /**
+   * Custom comparator class to sort the output of mapper in descending order.
+   */
   class DescendingIntComparator() extends WritableComparator(classOf[IntWritable], true) {
     @SuppressWarnings(Array("rawtypes"))
     override def compare(w1: WritableComparable[_], w2: WritableComparable[_]): Int = {
@@ -68,6 +79,11 @@ object Task2 {
   }
 
   class Reduce2 extends Reducer[IntWritable, Text, Text, Text] {
+    // Optional step to add headers to csv file. Have to change the datatype of output in reducer as well to text.
+    override def setup(context: Reducer[IntWritable, Text, Text, Text]#Context): Unit = {
+      context.write(new Text("Number of messages"),new Text("Interval start time"))
+    }
+
     override def reduce(key: IntWritable, values: lang.Iterable[Text], context: Reducer[IntWritable, Text, Text, Text]#Context): Unit = {
 
       values.forEach(each => {
@@ -90,6 +106,8 @@ object Task2 {
     job.setOutputValueClass(classOf[IntWritable])
     FileInputFormat.addInputPath(job, new Path(args(0)))
     FileOutputFormat.setOutputPath(job, new Path(args(1)))
+    logger.info("Starting map reduce job 1 for task1. This job will find log messages that match the pattern defined in config file and returns their count across the " +
+      "interval defined by the 4th parameter")
     if (job.waitForCompletion(true)) {
       val job1 = Job.getInstance(conf, "Job2")
       job1.setJarByClass(classOf[Task2])
@@ -104,6 +122,8 @@ object Task2 {
       job1.setOutputValueClass(classOf[Text])
       FileInputFormat.addInputPath(job1, new Path(args(1)))
       FileOutputFormat.setOutputPath(job1, new Path(args(2)))
+      logger.info("Starting map reduce job 2 for task2. This job will essentially only sort the output of job 1 in descending order of number of messages." +
+        "Here only 1 reducer is defined so that all results can be aggregated in one output file. This step is optional")
       System.exit(if (job1.waitForCompletion(true)) 0 else 1)
     }
   }

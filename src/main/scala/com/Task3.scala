@@ -1,6 +1,7 @@
 package com
 
 import com.Helpers.CreateLogger
+import com.Task2.logger
 import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
@@ -10,13 +11,16 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 
 import java.lang
-import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 import scala.jdk.CollectionConverters.IterableHasAsScala
 
 class Task3 {
 
 }
+
+/**
+ * This task involves counting the number of messages belonging to each message type.
+ */
 
 object Task3 {
   val config = ConfigFactory.load()
@@ -54,6 +58,7 @@ object Task3 {
     job.setOutputValueClass(classOf[IntWritable])
     FileInputFormat.addInputPath(job, new Path(args(0)))
     FileOutputFormat.setOutputPath(job, new Path(args(1)))
+    logger.info("Starting job")
     System.exit(if (job.waitForCompletion(true)) 0 else 1)
   }
 }
